@@ -1,0 +1,19 @@
+<hello name="{{ name }}"></hello>
+<p>Start editing to see some magic happen :)</p>
+<div class="content">
+  <form name="form" #f="ngForm" class="float-end">
+    <div class="input-group col">
+      <input
+        type="text"
+        class="form-control text-end"
+        name="amount"
+        placeholder="Wpisz kwotę"
+        [(ngModel)]="amount"
+        id="amount"
+        #amountInput
+        sfkMoneyMask
+      />
+      <div class="input-group-text">zł</div>
+    </div>
+  </form>
+</div>
