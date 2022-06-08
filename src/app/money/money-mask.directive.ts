@@ -1,15 +1,28 @@
-import { Directive, ElementRef, forwardRef, HostListener, Injector, Input, OnInit, Renderer2 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgControl } from '@angular/forms';
+import {
+  Directive,
+  ElementRef,
+  forwardRef,
+  HostListener,
+  Injector,
+  Input,
+  OnInit,
+  Renderer2,
+} from '@angular/core';
+import {
+  ControlValueAccessor,
+  NG_VALUE_ACCESSOR,
+  NgControl,
+} from '@angular/forms';
 
 const CURRENCY_DIRECTIVE_VALUE_ACCESSOR: any = {
   provide: NG_VALUE_ACCESSOR,
   useExisting: forwardRef(() => MoneyMaskDirective),
-  multi: true
+  multi: true,
 };
 
 @Directive({
   selector: '[sfkMoneyMask]',
-  providers: [ CURRENCY_DIRECTIVE_VALUE_ACCESSOR ]
+  providers: [CURRENCY_DIRECTIVE_VALUE_ACCESSOR],
 })
 export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
   @Input() delimiter = ' ';
@@ -34,8 +47,11 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
 
   private keyboardEvent: KeyboardEvent;
 
-  constructor(private injector: Injector, private renderer: Renderer2, private elementRef: ElementRef) {
-  }
+  constructor(
+    private injector: Injector,
+    private renderer: Renderer2,
+    private elementRef: ElementRef
+  ) {}
 
   @HostListener('blur')
   onBlur() {
@@ -43,6 +59,11 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
       this.addDecimalZeroes();
     }
     this.onTouch();
+  }
+
+  @HostListener('focus')
+  onFocus() {
+    this.elementRef.nativeElement.select();
   }
 
   @HostListener('input')
@@ -57,9 +78,14 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
     this.fixCursorPosition(value, selectionStart);
   }
 
-  @HostListener('keydown', [ '$event' ])
+  @HostListener('keydown', ['$event'])
   keyDownEvent(event: KeyboardEvent) {
-    if (event.key && event.key.length === 1 && !event.key.match(/[,.\d]/) && !event.ctrlKey) {
+    if (
+      event.key &&
+      event.key.length === 1 &&
+      !event.key.match(/[,.\d]/) &&
+      !event.ctrlKey
+    ) {
       event.preventDefault();
     }
     this.keyboardEvent = event;
@@ -93,7 +119,9 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
     partInteger = this.addLeadingZero(partInteger, partDecimal);
     partInteger = this.addDelimiter(partInteger);
 
-    return partSign + partInteger.toString() + this.getDecimalIsScale(partDecimal);
+    return (
+      partSign + partInteger.toString() + this.getDecimalIsScale(partDecimal)
+    );
   }
 
   private getStripLeadingZeros(value: any) {
@@ -108,11 +136,13 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
   }
 
   private trimDecimalScale(partDecimal: string) {
-    return this.numeralDecimalMark + partDecimal.slice(0, this.numeralDecimalScale);
+    return (
+      this.numeralDecimalMark + partDecimal.slice(0, this.numeralDecimalScale)
+    );
   }
 
   private getIntegerWithoutSign(partSign: string, partInteger) {
-    return (partSign === '-') ? partInteger.slice(1) : partInteger;
+    return partSign === '-' ? partInteger.slice(1) : partInteger;
   }
 
   private trimIntegerScale(partInteger) {
@@ -131,14 +161,15 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
   }
 
   private addLeadingZero(partInteger, partDecimal: string) {
-    return (partInteger === '' && partDecimal !== '') ? '0' : partInteger;
+    return partInteger === '' && partDecimal !== '' ? '0' : partInteger;
   }
 
   private getNormalizedValue(value: any) {
     if (value?.indexOf('-') > 0) {
       value = '-' + value.replaceAll('-', '');
     }
-    return (value || '').replace(/[A-Za-z]/g, '')
+    return (value || '')
+      .replace(/[A-Za-z]/g, '')
       .replace(/[,.]/, 'M')
       .replace(/[^\dM-]/g, '')
       .replace(/^-/, 'N')
@@ -149,8 +180,10 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
 
   private getRawValue(value: string): number | null {
     const allDelimiter = new RegExp(this.delimiter, 'g');
-    return (value !== '')
-      ? parseFloat(value.replace(allDelimiter, '').replace(this.numeralDecimalMark, '.'))
+    return value !== ''
+      ? parseFloat(
+          value.replace(allDelimiter, '').replace(this.numeralDecimalMark, '.')
+        )
       : null;
   }
 
@@ -160,7 +193,9 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
       const parts = value.split(this.numeralDecimalMark);
       const partInteger = parts[0] === '-' ? '0' : parts[0];
       let partDecimal = parts[1] ? parts[1] + '00' : '00';
-      partDecimal = this.numeralDecimalMark + partDecimal.slice(0, this.numeralDecimalScale);
+      partDecimal =
+        this.numeralDecimalMark +
+        partDecimal.slice(0, this.numeralDecimalScale);
 
       const formattedValue = partInteger + partDecimal;
       this.onChange(formattedValue);
@@ -186,22 +221,36 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
 
   private fixCursorPosition(valueBeforeFormat: string, initPosition: number) {
     const newValue = this.getNativeValue();
-    const diffDelimiter = newValue.split(this.delimiter).length - valueBeforeFormat.split(this.delimiter).length;
+    const diffDelimiter =
+      newValue.split(this.delimiter).length -
+      valueBeforeFormat.split(this.delimiter).length;
     const diffLength = newValue.length - valueBeforeFormat.length;
     const isNewValueIsDelimiter = newValue[initPosition] === this.delimiter;
-    const isDecimalMarkPressed = this.keyboardEvent && this.keyboardEvent
-      .key?.match(`[.${ this.numeralDecimalMark }]`)?.length > 0;
-    const isBackspaceDelimiter = this.keyboardEvent && this.keyboardEvent.key === 'Backspace'
-      && isNewValueIsDelimiter;
-    const isDelete = diffDelimiter < 0 && this.keyboardEvent && this.keyboardEvent.key === 'Delete';
+    const isDecimalMarkPressed =
+      this.keyboardEvent &&
+      this.keyboardEvent.key?.match(`[.${this.numeralDecimalMark}]`)?.length >
+        0;
+    const isBackspaceDelimiter =
+      this.keyboardEvent &&
+      this.keyboardEvent.key === 'Backspace' &&
+      isNewValueIsDelimiter;
+    const isDelete =
+      diffDelimiter < 0 &&
+      this.keyboardEvent &&
+      this.keyboardEvent.key === 'Delete';
     const indexShift = this.getPartSign(newValue) ? 1 : 0;
-    const isChangeLeadingZero = valueBeforeFormat[indexShift] === '0' && newValue[indexShift] !== '0';
+    const isChangeLeadingZero =
+      valueBeforeFormat[indexShift] === '0' && newValue[indexShift] !== '0';
 
-    let newPositionStart = isBackspaceDelimiter ? initPosition
-      : isDecimalMarkPressed ? newValue.indexOf(this.numeralDecimalMark) + 1
-        : isDelete || isChangeLeadingZero ? initPosition - 1
-          : diffLength < 0 ? initPosition + (isNewValueIsDelimiter ? 1 : diffDelimiter)
-            : initPosition + diffLength;
+    let newPositionStart = isBackspaceDelimiter
+      ? initPosition
+      : isDecimalMarkPressed
+      ? newValue.indexOf(this.numeralDecimalMark) + 1
+      : isDelete || isChangeLeadingZero
+      ? initPosition - 1
+      : diffLength < 0
+      ? initPosition + (isNewValueIsDelimiter ? 1 : diffDelimiter)
+      : initPosition + diffLength;
 
     this.setSelection(newPositionStart);
   }
@@ -217,7 +266,11 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
   }
 
   private setNativeValue(formattedValue: string) {
-    this.renderer.setProperty(this.elementRef.nativeElement, 'value', formattedValue);
+    this.renderer.setProperty(
+      this.elementRef.nativeElement,
+      'value',
+      formattedValue
+    );
   }
 
   registerOnChange(fn: (value: number) => void): void {
@@ -232,7 +285,11 @@ export class MoneyMaskDirective implements ControlValueAccessor, OnInit {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.renderer.setProperty(this.elementRef.nativeElement, 'disabled', isDisabled);
+    this.renderer.setProperty(
+      this.elementRef.nativeElement,
+      'disabled',
+      isDisabled
+    );
   }
 
   writeValue(value: number): void {
